@@ -1,0 +1,3 @@
+python chat_server_threaded.py
+python log_server.py
+python chatnet_gui.py

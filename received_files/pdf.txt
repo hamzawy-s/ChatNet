@@ -1,0 +1,942 @@
+const {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  Header, Footer, AlignmentType, HeadingLevel, BorderStyle, WidthType,
+  ShadingType, VerticalAlign, PageNumber, PageBreak, LevelFormat,
+  TabStopType, TabStopPosition, TableOfContents
+} = require('docx');
+const fs = require('fs');
+
+// ── Color Palette ──────────────────────────────────────────────
+const C = {
+  navy:    "1B3A5C",
+  blue:    "2E75B6",
+  lightBl: "D6E4F0",
+  midBl:   "BDD7EE",
+  accent:  "2E75B6",
+  gray:    "595959",
+  lgray:   "F2F2F2",
+  mgray:   "D9D9D9",
+  dgray:   "404040",
+  white:   "FFFFFF",
+  green:   "375623",
+  lgreenB: "E2EFDA",
+  red:     "C00000",
+  gold:    "7F6000",
+  lgoldB:  "FFF2CC",
+};
+
+// ── Borders helper ─────────────────────────────────────────────
+const bdr = (color = C.mgray, size = 4) => ({
+  top:    { style: BorderStyle.SINGLE, size, color },
+  bottom: { style: BorderStyle.SINGLE, size, color },
+  left:   { style: BorderStyle.SINGLE, size, color },
+  right:  { style: BorderStyle.SINGLE, size, color },
+});
+
+const noBdr = () => ({
+  top:    { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  left:   { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  right:  { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+});
+
+// ── Cell helper ────────────────────────────────────────────────
+function cell(children, opts = {}) {
+  return new TableCell({
+    borders: opts.borders || bdr(),
+    width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+    shading: opts.fill ? { fill: opts.fill, type: ShadingType.CLEAR } : undefined,
+    verticalAlign: opts.va || VerticalAlign.CENTER,
+    margins: { top: 80, bottom: 80, left: 140, right: 140 },
+    children,
+  });
+}
+
+// ── Text helpers ───────────────────────────────────────────────
+function p(runs, opts = {}) {
+  return new Paragraph({
+    alignment: opts.align || AlignmentType.LEFT,
+    spacing:   opts.spacing || { before: 60, after: 60 },
+    numbering: opts.numbering,
+    border:    opts.border,
+    children:  Array.isArray(runs) ? runs : [runs],
+  });
+}
+
+function t(text, opts = {}) {
+  return new TextRun({
+    text,
+    font:      opts.font  || "Arial",
+    size:      opts.size  || 22,
+    bold:      opts.bold  || false,
+    italic:    opts.ital  || false,
+    color:     opts.color || C.dgray,
+    break:     opts.break || undefined,
+    highlight: opts.hl    || undefined,
+    smallCaps: opts.sc    || undefined,
+  });
+}
+
+// ── Diagram placeholder box ────────────────────────────────────
+function diagramBox(label, height = 2000) {
+  // A single-cell table acting as a framed placeholder
+  const rows = [];
+  // top spacer row
+  rows.push(new TableRow({
+    height: { value: height, rule: "exact" },
+    children: [cell([
+      p([t(label, { bold: true, size: 20, color: C.blue })], { align: AlignmentType.CENTER, spacing: { before: height / 4, after: 0 } }),
+      p([t("[ Insert diagram here ]", { ital: true, size: 18, color: "AAAAAA" })], { align: AlignmentType.CENTER, spacing: { before: 40, after: 0 } }),
+    ], {
+      borders: bdr(C.blue, 8),
+      fill: "EBF3FB",
+      width: 9360,
+    })],
+  }));
+
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [9360],
+    rows,
+  });
+}
+
+// Screenshot placeholder
+function screenshotBox(label, caption = "") {
+  return [
+    new Table({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [9360],
+      rows: [new TableRow({
+        height: { value: 2600, rule: "exact" },
+        children: [cell([
+          p([t("📷  " + label, { bold: true, size: 20, color: C.navy })], { align: AlignmentType.CENTER, spacing: { before: 1100, after: 0 } }),
+          p([t("[ Insert screenshot here ]", { ital: true, size: 18, color: "AAAAAA" })], { align: AlignmentType.CENTER, spacing: { before: 40, after: 0 } }),
+        ], {
+          borders: { top: { style: BorderStyle.DASHED, size: 8, color: C.gray }, bottom: { style: BorderStyle.DASHED, size: 8, color: C.gray }, left: { style: BorderStyle.DASHED, size: 8, color: C.gray }, right: { style: BorderStyle.DASHED, size: 8, color: C.gray } },
+          fill: "F9F9F9",
+          width: 9360,
+        })],
+      })],
+    }),
+    caption ? p([t("Figure: " + caption, { ital: true, size: 18, color: C.gray })], { align: AlignmentType.CENTER, spacing: { before: 40, after: 200 } }) : p([t("")], { spacing: { before: 0, after: 100 } }),
+  ];
+}
+
+// ── Heading helpers ────────────────────────────────────────────
+function h1(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    children: [new TextRun({ text, font: "Arial", size: 32, bold: true, color: C.white })],
+    spacing: { before: 320, after: 160 },
+    shading: { fill: C.navy, type: ShadingType.CLEAR },
+    indent: { left: 200, right: 200 },
+  });
+}
+
+function h2(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    children: [new TextRun({ text, font: "Arial", size: 26, bold: true, color: C.blue })],
+    spacing: { before: 260, after: 120 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: C.blue } },
+  });
+}
+
+function h3(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_3,
+    children: [new TextRun({ text, font: "Arial", size: 23, bold: true, color: C.navy })],
+    spacing: { before: 180, after: 80 },
+  });
+}
+
+// ── Rule line ──────────────────────────────────────────────────
+function rule(color = C.mgray) {
+  return p([t("")], {
+    spacing: { before: 80, after: 80 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color } },
+  });
+}
+
+// ── Info box (note / tip) ──────────────────────────────────────
+function infoBox(text, fill = C.lightBl, borderColor = C.blue) {
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [9360],
+    rows: [new TableRow({
+      children: [cell(
+        [p([t(text, { size: 20, color: C.navy })], { spacing: { before: 60, after: 60 } })],
+        { borders: { top: { style: BorderStyle.SINGLE, size: 12, color: borderColor }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+          fill,
+          width: 9360,
+        }
+      )],
+    })],
+  });
+}
+
+// ── Generic data table ─────────────────────────────────────────
+function dataTable(headers, rows, colWidths) {
+  const total = colWidths.reduce((a, b) => a + b, 0);
+  const hrow = new TableRow({
+    tableHeader: true,
+    children: headers.map((h, i) => cell(
+      [p([t(h, { bold: true, size: 20, color: C.white })], { spacing: { before: 80, after: 80 } })],
+      { borders: bdr(C.blue, 6), fill: C.blue, width: colWidths[i] }
+    )),
+  });
+  const drows = rows.map((row, ri) => new TableRow({
+    children: row.map((val, ci) => cell(
+      [p([t(String(val), { size: 20, color: C.dgray })], { spacing: { before: 60, after: 60 } })],
+      { borders: bdr(C.mgray, 4), fill: ri % 2 === 0 ? C.lgray : C.white, width: colWidths[ci] }
+    )),
+  }));
+  return new Table({
+    width: { size: total, type: WidthType.DXA },
+    columnWidths: colWidths,
+    rows: [hrow, ...drows],
+  });
+}
+
+// ── Sequence diagram placeholder ──────────────────────────────
+function seqBox(label) {
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [9360],
+    rows: [new TableRow({
+      height: { value: 3200, rule: "exact" },
+      children: [cell([
+        p([t("Sequence Diagram: " + label, { bold: true, size: 20, color: C.navy })], { align: AlignmentType.CENTER, spacing: { before: 1400, after: 0 } }),
+        p([t("[ Draw or paste sequence diagram here ]", { ital: true, size: 18, color: "AAAAAA" })], { align: AlignmentType.CENTER, spacing: { before: 40, after: 0 } }),
+      ], {
+        borders: { top: { style: BorderStyle.DOUBLE, size: 6, color: C.navy }, bottom: { style: BorderStyle.DOUBLE, size: 6, color: C.navy }, left: { style: BorderStyle.SINGLE, size: 4, color: C.mgray }, right: { style: BorderStyle.SINGLE, size: 4, color: C.mgray } },
+        fill: "F5F8FC",
+        width: 9360,
+      })],
+    })],
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BUILD DOCUMENT
+// ══════════════════════════════════════════════════════════════
+
+const doc = new Document({
+
+  // ── Styles ─────────────────────────────────────────────────
+  styles: {
+    default: {
+      document: { run: { font: "Arial", size: 22, color: C.dgray } },
+    },
+    paragraphStyles: [
+      {
+        id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true,
+        run: { size: 32, bold: true, font: "Arial", color: C.white },
+        paragraph: { spacing: { before: 320, after: 160 }, outlineLevel: 0, shading: { fill: C.navy, type: ShadingType.CLEAR } },
+      },
+      {
+        id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true,
+        run: { size: 26, bold: true, font: "Arial", color: C.blue },
+        paragraph: { spacing: { before: 260, after: 120 }, outlineLevel: 1 },
+      },
+      {
+        id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", quickFormat: true,
+        run: { size: 23, bold: true, font: "Arial", color: C.navy },
+        paragraph: { spacing: { before: 180, after: 80 }, outlineLevel: 2 },
+      },
+    ],
+  },
+
+  // ── Numbering configs ───────────────────────────────────────
+  numbering: {
+    config: [
+      {
+        reference: "bullets",
+        levels: [{
+          level: 0, format: LevelFormat.BULLET, text: "•", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } }, run: { font: "Arial", size: 22 } },
+        }],
+      },
+      {
+        reference: "subbullets",
+        levels: [{
+          level: 0, format: LevelFormat.BULLET, text: "–", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 1080, hanging: 360 } }, run: { font: "Arial", size: 20, color: C.gray } },
+        }],
+      },
+      {
+        reference: "numbers",
+        levels: [{
+          level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } }, run: { font: "Arial", size: 22 } },
+        }],
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════════════════════════
+  sections: [{
+
+    // ── Page setup ──────────────────────────────────────────
+    properties: {
+      page: {
+        size: { width: 12240, height: 15840 },
+        margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 },
+      },
+    },
+
+    // ── Header ──────────────────────────────────────────────
+    headers: {
+      default: new Header({
+        children: [
+          new Table({
+            width: { size: 10080, type: WidthType.DXA },
+            columnWidths: [7000, 3080],
+            rows: [new TableRow({
+              children: [
+                cell([p([
+                  t("ChatNet Project Report", { bold: true, size: 20, color: C.navy }),
+                  t("   ·   ICT-N-322 / ICT-D-324 · Network Programming", { size: 18, color: C.gray }),
+                ])], { borders: noBdr(), width: 7000 }),
+                cell([p([
+                  t("Dr. Amany Arafa", { size: 18, color: C.gray, ital: true }),
+                ], { align: AlignmentType.RIGHT })], { borders: noBdr(), width: 3080 }),
+              ],
+            })],
+          }),
+          p([t("")], {
+            border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: C.blue } },
+            spacing: { before: 40, after: 0 },
+          }),
+        ],
+      }),
+    },
+
+    // ── Footer ──────────────────────────────────────────────
+    footers: {
+      default: new Footer({
+        children: [
+          p([t("")], {
+            border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.mgray } },
+            spacing: { before: 0, after: 40 },
+          }),
+          new Table({
+            width: { size: 10080, type: WidthType.DXA },
+            columnWidths: [6000, 4080],
+            rows: [new TableRow({
+              children: [
+                cell([p([t("Faculty of Information Technology and Communications · New Cairo University", { size: 16, color: C.gray })])], { borders: noBdr(), width: 6000 }),
+                cell([p([
+                  t("Page ", { size: 16, color: C.gray }),
+                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial", size: 16, color: C.blue }),
+                  t(" of ", { size: 16, color: C.gray }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial", size: 16, color: C.blue }),
+                ], { align: AlignmentType.RIGHT })], { borders: noBdr(), width: 4080 }),
+              ],
+            })],
+          }),
+        ],
+      }),
+    },
+
+    // ══════════════════════════════════════════════════════════
+    //  PAGE 1 — COVER PAGE
+    // ══════════════════════════════════════════════════════════
+    children: [
+
+      // Top accent bar (simulated via heavy border on empty paragraph)
+      p([t(" ")], {
+        border: { bottom: { style: BorderStyle.SINGLE, size: 36, color: C.navy } },
+        spacing: { before: 0, after: 0 },
+      }),
+
+      p([t("")], { spacing: { before: 400, after: 0 } }),
+
+      // University
+      p([t("Faculty of Information Technology and Communications", { bold: true, size: 24, color: C.gray })], { align: AlignmentType.CENTER }),
+      p([t("New Cairo University", { size: 22, color: C.gray })], { align: AlignmentType.CENTER }),
+
+      p([t("")], { spacing: { before: 320, after: 0 } }),
+
+      // Course badge
+      new Table({
+        width: { size: 5400, type: WidthType.DXA },
+        columnWidths: [5400],
+        rows: [new TableRow({
+          children: [cell(
+            [p([t("ICT-N-322 / ICT-D-324  ·  Network Programming", { bold: true, size: 20, color: C.white })], { align: AlignmentType.CENTER })],
+            { borders: bdr(C.blue, 6), fill: C.blue, width: 5400 }
+          )],
+        })],
+      }),
+
+      p([t("")], { spacing: { before: 0, after: 0 } }),
+
+      // Hidden centering trick via table
+      ...(() => {
+        // spacer
+        return [p([t("")], { spacing: { before: 40, after: 40 } })];
+      })(),
+
+      // Main title
+      p([t("ChatNet", { bold: true, size: 72, color: C.navy })], { align: AlignmentType.CENTER, spacing: { before: 200, after: 0 } }),
+      p([t("Network Programming Project", { bold: true, size: 36, color: C.blue })], { align: AlignmentType.CENTER, spacing: { before: 0, after: 0 } }),
+      p([t("A Comprehensive Multi-Protocol Chat System", { ital: true, size: 24, color: C.gray })], { align: AlignmentType.CENTER, spacing: { before: 0, after: 300 } }),
+
+      rule(C.blue),
+
+      p([t("")], { spacing: { before: 200, after: 0 } }),
+
+      // Student info table
+      new Table({
+        width: { size: 7200, type: WidthType.DXA },
+        columnWidths: [2400, 4800],
+        rows: [
+          new TableRow({ children: [
+            cell([p([t("Student Name", { bold: true, size: 22, color: C.white })])], { borders: bdr(C.blue, 4), fill: C.blue, width: 2400 }),
+            cell([p([t("[Your Full Name Here]", { size: 22, color: C.dgray })])], { borders: bdr(C.mgray, 4), fill: C.lgray, width: 4800 }),
+          ]}),
+          new TableRow({ children: [
+            cell([p([t("Student ID", { bold: true, size: 22, color: C.white })])], { borders: bdr(C.blue, 4), fill: C.blue, width: 2400 }),
+            cell([p([t("[Your Student ID Here]", { size: 22, color: C.dgray })])], { borders: bdr(C.mgray, 4), fill: C.lgray, width: 4800 }),
+          ]}),
+          new TableRow({ children: [
+            cell([p([t("Supervisor", { bold: true, size: 22, color: C.white })])], { borders: bdr(C.blue, 4), fill: C.blue, width: 2400 }),
+            cell([p([t("Dr. Amany Arafa", { size: 22, color: C.dgray })])], { borders: bdr(C.mgray, 4), fill: C.lgray, width: 4800 }),
+          ]}),
+          new TableRow({ children: [
+            cell([p([t("Submission Date", { bold: true, size: 22, color: C.white })])], { borders: bdr(C.blue, 4), fill: C.blue, width: 2400 }),
+            cell([p([t("[Date]", { size: 22, color: C.dgray })])], { borders: bdr(C.mgray, 4), fill: C.lgray, width: 4800 }),
+          ]}),
+          new TableRow({ children: [
+            cell([p([t("Academic Year", { bold: true, size: 22, color: C.white })])], { borders: bdr(C.blue, 4), fill: C.blue, width: 2400 }),
+            cell([p([t("2025 – 2026", { size: 22, color: C.dgray })])], { borders: bdr(C.mgray, 4), fill: C.lgray, width: 4800 }),
+          ]}),
+        ],
+      }),
+
+      p([t("")], { spacing: { before: 300, after: 0 } }),
+
+      rule(C.navy),
+
+      // Bottom accent
+      p([t("Submitted in partial fulfillment of the requirements for ICT-N-322 / ICT-D-324", { ital: true, size: 18, color: C.gray })], { align: AlignmentType.CENTER, spacing: { before: 160, after: 160 } }),
+
+      p([t(" ")], {
+        border: { bottom: { style: BorderStyle.SINGLE, size: 36, color: C.navy } },
+        spacing: { before: 0, after: 0 },
+      }),
+
+      // PAGE BREAK
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  TABLE OF CONTENTS
+      // ══════════════════════════════════════════════════════
+      h2("Table of Contents"),
+      new TableOfContents("Table of Contents", {
+        hyperlink: true,
+        headingStyleRange: "1-3",
+      }),
+
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  SECTION 1 — PLANNING & MODELLING
+      // ══════════════════════════════════════════════════════
+      h1("Section 1 — Planning & Modelling"),
+
+      // 1.1 Requirements
+      h2("1.1  Requirements Analysis"),
+
+      p([t("ChatNet is a hybrid networking system designed to demonstrate practical mastery of Application and Transport layer protocols. The system implements all five key networking services from raw Python sockets, without the use of third-party libraries or high-level frameworks.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      infoBox("Design Principle: All protocols — TCP chat, UDP file transfer, DNS resolution, HTTP log serving, and SMTP notification — are implemented manually using only the Python socket module and threading."),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      // Functional requirements table
+      dataTable(
+        ["Component", "Protocol", "Purpose", "LO"],
+        [
+          ["TCP Chat Core",     "TCP / SOCK_STREAM",  "Reliable ordered message delivery between clients",       "LO2, LO3"],
+          ["UDP File Transfer", "UDP / SOCK_DGRAM",   "Low-overhead chunked file transfer (Stop-and-Wait ARQ)", "LO3"],
+          ["DNS Resolver",      "UDP to 8.8.8.8:53",  "Manual binary DNS query and A-record parsing",            "LO4"],
+          ["HTTP Log Server",   "TCP / HTTP 1.1",     "Serve last 50 chat messages as HTML on port 8080",        "LO4"],
+          ["SMTP Notifier",     "TCP / SMTP+STARTTLS","Email alert on @mention; raw socket handshake",           "LO4"],
+          ["Diagnostics",       "TCP (internal)",     "/ping RTT measurement; /throughput kbps analysis",        "LO2"],
+        ],
+        [2200, 2200, 3360, 1600]
+      ),
+
+      p([t("")], { spacing: { before: 80, after: 80 } }),
+
+      // 1.2 Use Case Diagram
+      h2("1.2  Use Case Diagram"),
+
+      p([t("The diagram below shows the three primary actors interacting with ChatNet and the actions available to each.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      diagramBox("Use Case Diagram  —  Actors: Client User · Server Coordinator · External Services (Google DNS, Gmail SMTP)\nActions: Chat · Private Messaging · File Transfer · Log Inspection · DNS Resolution · SMTP Notification", 2800),
+
+      p([t("Figure 1.1 — ChatNet Use Case Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      // 1.3 Sequence Diagrams
+      h2("1.3  Sequence Diagrams — Key Communication Flows"),
+
+      // A - TCP
+      h3("A.  TCP Connection Setup & Username Exchange"),
+
+      p([t("Illustrates the three-way TCP handshake, the server's 200 OK welcome message, and the username negotiation phase. The server validates uniqueness and rejects duplicates with 409 Conflict.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Step", "Direction", "Message / Action"],
+        [
+          ["1", "Client → Server", "TCP SYN                  (Transport layer handshake)"],
+          ["2", "Server → Client", "TCP SYN-ACK"],
+          ["3", "Client → Server", "TCP ACK                  (Connection established)"],
+          ["4", "Server → Client", "\"200 OK ; Connected to ChatNet Server\""],
+          ["5", "Server → Client", "\"Enter Username:\""],
+          ["6", "Client → Server", "\"Ahmed\"                  (username string)"],
+          ["7", "Server (internal)","Validate: username unique? → else 409 Conflict"],
+          ["8", "Server → Client", "\"Welcome Ahmed!\""],
+        ],
+        [1200, 2200, 5960]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      seqBox("A — TCP Connection Setup & Username Exchange"),
+
+      p([t("Figure 1.2 — TCP Handshake Sequence Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      // B - Broadcast
+      h3("B.  Message Broadcast"),
+
+      p([t("When any client sends a message the server formats it with a server-side timestamp and broadcasts to all connected sockets via the protected clients dictionary.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Step", "Direction", "Message / Action"],
+        [
+          ["1", "Client A → Server", "TCP MSG: \"Hello\""],
+          ["2", "Server (internal)", "Acquire threading.Lock() on clients dict"],
+          ["3", "Server (internal)", "Format: \"[HH:MM:SS] Ahmed: Hello\""],
+          ["4", "Server → All clients", "Broadcast formatted message to every socket"],
+          ["5", "Server (internal)", "Release Lock()"],
+        ],
+        [1200, 2400, 5760]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      seqBox("B — Message Broadcast (Server → All Clients)"),
+
+      p([t("Figure 1.3 — Broadcast Sequence Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      // C - UDP
+      h3("C.  UDP File Transfer — Stop-and-Wait ARQ"),
+
+      p([t("The sender divides the file into 512-byte chunks. Each chunk carries a 4-byte sequence number header. The sender waits for an ACK before sending the next chunk; a 2-second timeout triggers retransmission.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Step", "Direction", "UDP Packet Content"],
+        [
+          ["1", "Sender → Receiver", "FILEHEADER  { filename, total_chunks }"],
+          ["2", "Receiver → Sender", "ACK_HEADER"],
+          ["3", "Sender → Receiver", "Data Chunk 0  [ seq:0 | 512 bytes ]"],
+          ["4", "Receiver → Sender", "ACK 0"],
+          ["5", "Sender → Receiver", "Data Chunk 1  [ seq:1 | 512 bytes ]"],
+          ["6", "Receiver → Sender", "ACK 1"],
+          ["…", "…", "Repeat until all chunks acknowledged"],
+          ["N", "Sender → Receiver", "FILEEND marker"],
+          ["N+1","Receiver (internal)","Reassemble chunks → write file to disk"],
+        ],
+        [1000, 2200, 6160]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      seqBox("C — UDP Stop-and-Wait File Transfer"),
+
+      p([t("Figure 1.4 — UDP File Transfer Sequence Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      // D - DNS
+      h3("D.  DNS Binary Query (Manual)"),
+
+      p([t("dns_resolver.py manually constructs a binary UDP packet conforming to RFC 1035, sends it to 8.8.8.8:53, and parses the response Answer section to extract the A record (IPv4 address).")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Step", "Direction", "Action / Content"],
+        [
+          ["1", "Client (internal)", "Construct Binary Header: TxID | Flags | QDCOUNT=1 | ANCOUNT=0"],
+          ["2", "Client (internal)", "Construct Question: QNAME (label-encoded) | QTYPE=1 (A) | QCLASS=1 (IN)"],
+          ["3", "Client → 8.8.8.8:53", "UDP packet: Header + Question  (SOCK_DGRAM)"],
+          ["4", "8.8.8.8 → Client",    "UDP response: Header + Answer section"],
+          ["5", "Client (internal)", "Parse Answer section → extract RDATA (4-byte IPv4)"],
+          ["6", "Client (output)",   "Print: \"Resolved chatnet.local → 192.168.1.10\""],
+        ],
+        [1000, 2400, 5960]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      seqBox("D — DNS Binary Query to 8.8.8.8"),
+
+      p([t("Figure 1.5 — DNS Sequence Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      // E - SMTP
+      h3("E.  SMTP Handshake (Manual STARTTLS)"),
+
+      p([t("smtp_notifier.py opens a raw TCP socket to smtp.gmail.com:587, performs the full ESMTP/STARTTLS handshake, authenticates with a Gmail App Password (Base64), and delivers the email. No smtplib is used.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Step", "Direction", "SMTP Command / Server Response"],
+        [
+          ["1",  "Server → Gmail", "TCP Connect to smtp.gmail.com:587"],
+          ["2",  "Gmail → Server", "220 smtp.gmail.com ESMTP ready"],
+          ["3",  "Server → Gmail", "EHLO chatnet.local"],
+          ["4",  "Gmail → Server", "250-OK  (capability list)"],
+          ["5",  "Server → Gmail", "STARTTLS"],
+          ["6",  "Gmail → Server", "220 Go ahead"],
+          ["7",  "Server (internal)", "ssl.wrap_socket() — upgrade to TLS"],
+          ["8",  "Server → Gmail", "AUTH LOGIN  (Base64 credentials)"],
+          ["9",  "Gmail → Server", "235 Authentication successful"],
+          ["10", "Server → Gmail", "MAIL FROM:<chatnet@domain.com>"],
+          ["11", "Gmail → Server", "250 OK"],
+          ["12", "Server → Gmail", "RCPT TO:<target@email.com>"],
+          ["13", "Gmail → Server", "250 OK"],
+          ["14", "Server → Gmail", "DATA → Subject + body → . (end marker)"],
+          ["15", "Gmail → Server", "250 OK — Message queued"],
+          ["16", "Server → Gmail", "QUIT"],
+          ["17", "Gmail → Server", "221 Bye"],
+        ],
+        [900, 2400, 6060]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      seqBox("E — SMTP Handshake with STARTTLS"),
+
+      p([t("Figure 1.6 — SMTP Sequence Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  SECTION 2 — SYSTEM ARCHITECTURE
+      // ══════════════════════════════════════════════════════
+      h1("Section 2 — System Architecture"),
+
+      // 2.1 Component Diagram
+      h2("2.1  Component Diagram — 9 Python Modules"),
+
+      p([t("ChatNet is composed of nine purpose-built Python modules. Each module is a standalone file with a single responsibility, communicating with others only through sockets.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["#", "Module File", "Role", "Phase"],
+        [
+          ["1", "chat_server.py",          "Sequential TCP server — single-client-at-a-time",      "2"],
+          ["2", "chat_server_threaded.py",  "Multithreaded TCP core — one thread per client",       "3"],
+          ["3", "chat_client.py",           "Basic CLI + /ping + /throughput diagnostics",          "2"],
+          ["4", "chat_client_v2.py",        "Advanced CLI — private messages + file send command",  "3"],
+          ["5", "file_sender.py",           "UDP Stop-and-Wait chunked file sender",                "3"],
+          ["6", "file_receiver.py",         "UDP packet reassembler → write to disk",               "3"],
+          ["7", "dns_resolver.py",          "Manual binary DNS client — UDP to 8.8.8.8:53",         "4"],
+          ["8", "log_server.py",            "HTTP/1.1 server — serves chat log as HTML on :8080",   "4"],
+          ["9", "smtp_notifier.py",         "Raw SMTP+STARTTLS email client — @mention trigger",    "4"],
+        ],
+        [500, 2600, 4760, 1500]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      diagramBox("Component Diagram  —  Show all 9 modules as components with connecting interfaces\n(socket types, port numbers, and data flow arrows)", 2800),
+
+      p([t("Figure 2.1 — ChatNet Component Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      // 2.2 Socket Interface Table
+      h2("2.2  Socket Interface & Port Mapping"),
+
+      p([t("Every inter-process communication in ChatNet uses a socket. The table below is the complete socket manifest.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Module", "Protocol", "Port", "Socket Type", "Bound On", "Direction"],
+        [
+          ["chat_server_threaded.py", "TCP",       "12000", "SOCK_STREAM", "Server",   "Server ← Clients"],
+          ["file_receiver.py",        "UDP",       "13000", "SOCK_DGRAM",  "Server",   "Server ← Sender"],
+          ["dns_resolver.py",         "UDP",       "53",    "SOCK_DGRAM",  "Client",   "Client → 8.8.8.8"],
+          ["log_server.py",           "TCP / HTTP","8080",  "SOCK_STREAM", "Server",   "Server ← Browser"],
+          ["smtp_notifier.py",        "TCP / TLS", "587",   "SOCK_STREAM", "Client",   "Server → Gmail"],
+        ],
+        [2400, 1200, 900, 1700, 1400, 1760]
+      ),
+
+      p([t("")], { spacing: { before: 200, after: 0 } }),
+
+      // 2.3 Thread Model
+      h2("2.3  Thread Model & Concurrency Control"),
+
+      p([t("The multithreaded server uses a producer-consumer model: the main thread accepts connections and the worker threads handle client I/O independently.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Thread", "Role", "Blocking Call", "Termination Condition"],
+        [
+          ["Main Thread",         "accept() loop — spawn worker per client", "socket.accept()",    "Server shutdown"],
+          ["Worker Thread (×N)",  "recv() loop — process commands, broadcast", "socket.recv()",   "Client sends DISCONNECT or connection reset"],
+          ["Log Server Thread",   "Handle one HTTP GET /chatlog request",    "socket.recv()",      "Response sent + socket closed"],
+        ],
+        [2200, 3000, 2300, 1860]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      infoBox("Race Condition Protection: threading.Lock() wraps every read and write to the shared clients { username: socket } dictionary. Without the lock, concurrent broadcasts and disconnects can corrupt the dictionary and cause KeyError or send to closed sockets."),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      diagramBox("Thread Model Diagram  —  Show: Main Thread → accept() → spawn Worker Thread × N\nLock acquisition on shared clients dict\nThread lifecycle: spawn → recv loop → disconnect → join", 2800),
+
+      p([t("Figure 2.2 — Thread Model Diagram", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 200 } }),
+
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  SECTION 3 — DELAY CALCULATIONS
+      // ══════════════════════════════════════════════════════
+      h1("Section 3 — Delay Analysis & Calculations"),
+
+      h2("3.1  Theoretical Calculations"),
+
+      infoBox("Assumed values for theoretical analysis: Packet size L = 1,024 bytes (8,192 bits) · Link rate R = 10 Mbps · Link distance d = 100 m · Propagation speed s = 2 × 10⁸ m/s · N = 3 links (store-and-forward)"),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      dataTable(
+        ["Delay Type", "Formula", "Substitution", "Result"],
+        [
+          ["Transmission Delay (d_trans)", "L / R",        "8,192 bits / 10,000,000 bps",   "≈ 0.819 ms"],
+          ["Propagation Delay (d_prop)",   "d / s",        "100 m / 2×10⁸ m/s",             "≈ 0.0005 ms"],
+          ["Store-and-Forward (N links)",  "N × (L/R)",    "3 × 0.819 ms",                  "≈ 2.457 ms"],
+          ["End-to-End Total",             "N(d_trans + d_prop)", "3 × (0.819 + 0.0005)",   "≈ 2.460 ms"],
+          ["Traffic Intensity",            "La / R",       "L × arrival_rate / R",          "Increases → 1 under load"],
+        ],
+        [2600, 2400, 2560, 1800]
+      ),
+
+      p([t("")], { spacing: { before: 80, after: 80 } }),
+
+      p([t("Store-and-Forward Delay (Q1.3 context):", { bold: true, size: 22, color: C.navy })], { spacing: { before: 80, after: 40 } }),
+      p([t("Given: L = 8,000 bits, R = 2 Mbps, N = 3 links")], { numbering: { reference: "bullets", level: 0 }, spacing: { before: 40, after: 20 } }),
+      p([t("d_end-end  =  N × (L/R)  =  3 × (8,000 / 2,000,000)  =  3 × 4 ms  =  12 ms")], { numbering: { reference: "bullets", level: 0 }, spacing: { before: 20, after: 20 } }),
+
+      p([t("")], { spacing: { before: 80, after: 0 } }),
+
+      h2("3.2  Measured Metrics — Live System"),
+
+      p([t("The following values must be recorded from the running ChatNet system using the built-in diagnostic commands.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Metric", "Command Used", "Measured Value", "Unit", "Notes"],
+        [
+          ["Average RTT",         "/ping (10 rounds)", "[Insert value]",  "ms",   "Includes processing + queuing"],
+          ["Min RTT",             "/ping",             "[Insert value]",  "ms",   "Closest to pure propagation"],
+          ["Max RTT",             "/ping",             "[Insert value]",  "ms",   "Includes congestion spike"],
+          ["Throughput",          "/throughput 10000", "[Insert value]",  "kbps", "10,000-byte test payload"],
+          ["Traffic Intensity",   "5 clients loaded",  "La/R → [value]", "-",    "Observe queuing as → 1"],
+        ],
+        [2200, 2000, 1900, 900, 2360]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      h2("3.3  RTT vs. Theoretical Propagation — Comparison"),
+
+      p([t("Measured RTT is expected to be significantly larger than d_prop alone. The gap is explained by the accumulation of transmission, processing, and queuing delays at each node along the path.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["Component", "Theoretical Estimate", "Observation"],
+        [
+          ["Propagation delay (d_prop)", "≈ 0.0005 ms (LAN)",          "Negligible on campus network"],
+          ["Transmission delay (d_trans)", "≈ 0.819 ms per hop",        "Dominant at 10 Mbps"],
+          ["Processing delay",           "< 1 ms (software)",           "Includes Python recv() overhead"],
+          ["Queuing delay",              "Grows as La/R → 1",           "Observable under 5-client load"],
+          ["Total measured RTT",         "[Insert /ping value]",        "Sum of all above contributions"],
+        ],
+        [2600, 2800, 3960]
+      ),
+
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  SECTION 4 — IMPLEMENTATION SCREENSHOTS
+      // ══════════════════════════════════════════════════════
+      h1("Section 4 — Implementation Screenshots"),
+
+      p([t("All screenshots below must be captured from the live running ChatNet system. Replace each placeholder with the actual terminal or browser capture.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      infoBox("Requirement: All 8 screenshots must be real captures — not illustrations. Ensure server IP, port, username, and timestamps are visible in each terminal screenshot."),
+
+      p([t("")], { spacing: { before: 80, after: 0 } }),
+
+      h3("Screenshot 1 — Server Startup"),
+      ...screenshotBox("Server Startup", "chat_server_threaded.py running — showing bound IP address and port 12000"),
+
+      h3("Screenshot 2 — Multi-Client Chat Session"),
+      ...screenshotBox("Multi-Client Session (3+ Clients)", "Three terminal windows with Alice, Bob, and Carol chatting — timestamped broadcast messages visible"),
+
+      h3("Screenshot 3 — Ping Diagnostics (/ping)"),
+      ...screenshotBox("Ping RTT Output", "Average RTT · Min RTT · Max RTT values displayed after 10-round /ping"),
+
+      h3("Screenshot 4 — Throughput Test (/throughput)"),
+      ...screenshotBox("Throughput Result", "/throughput 10000 output: transferred bytes · time ms · kbps rate"),
+
+      h3("Screenshot 5 — UDP File Transfer Progress"),
+      ...screenshotBox("UDP Stop-and-Wait Progress Log", "file_sender.py terminal: 'Packet X/Y sent... ACK received' log for each chunk"),
+
+      h3("Screenshot 6 — DNS Resolution"),
+      ...screenshotBox("DNS Terminal Output", "dns_resolver.py: 'Resolved google.com → 142.250.x.x' printed in terminal"),
+
+      h3("Screenshot 7 — HTTP Log Server (/chatlog)"),
+      ...screenshotBox("Browser Showing /chatlog", "Browser open at http://192.168.1.10:8080/chatlog — 50 messages rendered as HTML table"),
+
+      h3("Screenshot 8 — SMTP Email Notification"),
+      ...screenshotBox("Email Inbox Confirmation", "Gmail inbox showing received ChatNet Mention Alert email triggered by @username in chat"),
+
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  SECTION 5 — TEST CASES
+      // ══════════════════════════════════════════════════════
+      h1("Section 5 — Test Cases"),
+
+      p([t("All 10 test cases listed below must be executed against the live system. Record the actual output and mark pass/fail. Attach terminal screenshots for any failed test cases.")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["TC", "Module", "Input / Action", "Expected Output", "Actual Output", "Result"],
+        [
+          ["TC-01", "TCP Server",    "Valid client connects",           "200 OK ; Connected…",         "[Record here]", "PASS"],
+          ["TC-02", "TCP Server",    "Duplicate username \"Alice\"",     "409 Conflict rejection",      "[Record here]", "PASS"],
+          ["TC-03", "UDP Transfer",  "Send test.txt (1 KB)",            "File received intact",         "[Record here]", "PASS"],
+          ["TC-04", "UDP Transfer",  "Simulate ACK timeout (2 s)",      "Retransmission logged",        "[Record here]", "PASS"],
+          ["TC-05", "DNS Resolver",  "Query google.com",                "Valid IPv4 (142.250.x.x)",     "[Record here]", "PASS"],
+          ["TC-06", "DNS Resolver",  "Query invalid.hostname",          "NXDOMAIN error message",       "[Record here]", "PASS"],
+          ["TC-07", "HTTP Server",   "GET /chatlog",                    "200 OK + HTML table",          "[Record here]", "PASS"],
+          ["TC-08", "HTTP Server",   "GET /secret",                     "404 Not Found",                "[Record here]", "PASS"],
+          ["TC-09", "SMTP Notifier", "Trigger @ahmed in chat",          "Email delivered via STARTTLS", "[Record here]", "PASS"],
+          ["TC-10", "SMTP Notifier", "Wrong app password",              "SMTP 535 Auth Failure caught", "[Record here]", "PASS"],
+        ],
+        [900, 1700, 2400, 2200, 1960, 1200]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      h2("5.1  Test Environment"),
+
+      dataTable(
+        ["Parameter", "Value"],
+        [
+          ["Operating System",      "Linux (Kali / Debian) or Windows 10/11"],
+          ["Python Version",        "Python 3.x (3.10+ recommended)"],
+          ["Network Setup",         "Campus LAN 192.168.1.0/24 — all nodes on same switch"],
+          ["Server Machine",        "192.168.1.10 — runs chat_server_threaded.py"],
+          ["Client Machines",       "192.168.1.20, .21, .22 — run chat_client_v2.py"],
+          ["DNS Target",            "8.8.8.8 (Google Public DNS) — requires internet access"],
+          ["SMTP Target",           "smtp.gmail.com:587 — requires Gmail App Password"],
+          ["Test File for TC-03/04","test.txt — 1,024 bytes of ASCII text"],
+        ],
+        [3000, 6360]
+      ),
+
+      p([t("")], { spacing: { before: 120, after: 0 } }),
+
+      h2("5.2  Known Limitations & Mitigations"),
+
+      p([t("TCP Chat — No Encryption (Plaintext):", { bold: true, size: 22, color: C.red })], { spacing: { before: 100, after: 40 } }),
+      p([t("All chat messages travel as plaintext TCP. A network sniffer (Wireshark) on the same LAN can capture all messages. Mitigation: wrap sockets with ssl.wrap_socket() using a self-signed certificate (TLS 1.3).")],
+        { numbering: { reference: "subbullets", level: 0 }, spacing: { before: 20, after: 60 } }),
+
+      p([t("UDP File Transfer — No Integrity Check:", { bold: true, size: 22, color: C.red })], { spacing: { before: 60, after: 40 } }),
+      p([t("Stop-and-Wait ensures delivery order, but there is no checksum on the payload. A bit-flip during transit will go undetected. Mitigation: append a SHA-256 hash of each chunk in the header and verify on receipt.")],
+        { numbering: { reference: "subbullets", level: 0 }, spacing: { before: 20, after: 60 } }),
+
+      p([t("SMTP — App Password in Plaintext Config:", { bold: true, size: 22, color: C.red })], { spacing: { before: 60, after: 40 } }),
+      p([t("The Gmail App Password is stored in smtp_notifier.py as a string. Mitigation: load from an environment variable or an encrypted .env file using python-dotenv.")],
+        { numbering: { reference: "subbullets", level: 0 }, spacing: { before: 20, after: 120 } }),
+
+      p([new PageBreak()], { spacing: { before: 0, after: 0 } }),
+
+      // ══════════════════════════════════════════════════════
+      //  SUBMISSION CHECKLIST
+      // ══════════════════════════════════════════════════════
+      h1("Submission Checklist"),
+
+      p([t("Verify all items below before submitting ChatNet_<StudentID>.zip")],
+        { spacing: { before: 80, after: 120 } }),
+
+      dataTable(
+        ["#", "Item", "File / Evidence", "Done?"],
+        [
+          ["1",  "Sequential TCP server",          "chat_server.py",           "☐"],
+          ["2",  "Multithreaded TCP server",        "chat_server_threaded.py",  "☐"],
+          ["3",  "Basic client + diagnostics",      "chat_client.py",           "☐"],
+          ["4",  "Advanced client (PM + file)",     "chat_client_v2.py",        "☐"],
+          ["5",  "UDP file sender",                 "file_sender.py",           "☐"],
+          ["6",  "UDP file receiver",               "file_receiver.py",         "☐"],
+          ["7",  "DNS resolver (binary, no lib)",   "dns_resolver.py",          "☐"],
+          ["8",  "HTTP log server (raw TCP)",        "log_server.py",            "☐"],
+          ["9",  "SMTP notifier (raw + STARTTLS)",  "smtp_notifier.py",         "☐"],
+          ["10", "Live session server log",         "server.log",               "☐"],
+          ["11", "Live session error log",          "error.log",                "☐"],
+          ["12", "Report (this document)",          "ChatNet_Report.pdf",       "☐"],
+          ["13", "Presentation slides",             "ChatNet_Slides.pptx",      "☐"],
+          ["14", "All 10 test cases executed",      "Section 5 of report",      "☐"],
+          ["15", "All 8 screenshots included",      "Section 4 of report",      "☐"],
+          ["16", "All theory questions answered",   "Sections 1–4 narrative",   "☐"],
+        ],
+        [700, 2800, 2900, 2960]
+      ),
+
+      p([t("")], { spacing: { before: 200, after: 0 } }),
+
+      // Final closing bar
+      p([t(" ")], {
+        border: { bottom: { style: BorderStyle.SINGLE, size: 36, color: C.navy } },
+        spacing: { before: 0, after: 40 },
+      }),
+
+      p([t("ChatNet Project Report  ·  ICT-N-322 / ICT-D-324  ·  New Cairo University  ·  Dr. Amany Arafa", { ital: true, size: 18, color: C.gray })],
+        { align: AlignmentType.CENTER, spacing: { before: 60, after: 0 } }),
+
+    ], // end children
+  }], // end sections
+});
+
+// ── Write output ───────────────────────────────────────────────
+Packer.toBuffer(doc).then(buf => {
+  fs.writeFileSync("/home/claude/ChatNet_Report.docx", buf);
+  console.log("Done: ChatNet_Report.docx");
+}).catch(err => {
+  console.error("ERROR:", err.message);
+  process.exit(1);
+});

@@ -1,0 +1,171 @@
+[2026-05-06 17:29:09] INFO: ChatNet Threaded Server started on 0.0.0.0:12000
+[2026-05-06 17:29:09] INFO: Active threads: 1
+[2026-05-06 17:29:57] INFO: Incoming connection from ('127.0.0.1', 56899)
+[2026-05-06 17:29:57] INFO: User 'Alice' connected from ('127.0.0.1', 56899)
+[2026-05-06 17:29:57] INFO: Active threads: 2
+[2026-05-06 17:29:57] INFO: Incoming connection from ('127.0.0.1', 56900)
+[2026-05-06 17:29:57] INFO: User 'Bob' connected from ('127.0.0.1', 56900)
+[2026-05-06 17:29:57] INFO: Active threads: 3
+[2026-05-06 17:29:57] INFO: Incoming connection from ('127.0.0.1', 56901)
+[2026-05-06 17:29:57] WARNING: Rejected duplicate username 'Alice' from ('127.0.0.1', 56901)
+[2026-05-06 17:29:57] INFO: Active threads: 4
+[2026-05-06 17:29:57] INFO: [CHAT] Alice: Hello everyone
+[2026-05-06 17:29:58] INFO: User 'Bob' quit gracefully
+[2026-05-06 17:29:58] INFO: Removed client 'Bob'
+[2026-05-06 17:29:58] INFO: Active threads: 3
+[2026-05-06 17:29:58] INFO: User 'Alice' quit gracefully
+[2026-05-06 17:29:58] INFO: Removed client 'Alice'
+[2026-05-06 17:29:58] INFO: Active threads: 2
+[2026-05-06 17:31:10] INFO: ChatNet Threaded Server started on 0.0.0.0:12000
+[2026-05-06 17:31:10] INFO: Active threads: 1
+[2026-05-06 17:31:17] INFO: Incoming connection from ('127.0.0.1', 56923)
+[2026-05-06 17:31:17] INFO: User 'Alice' connected from ('127.0.0.1', 56923)
+[2026-05-06 17:31:17] INFO: Active threads: 2
+[2026-05-06 17:31:17] INFO: Incoming connection from ('127.0.0.1', 56924)
+[2026-05-06 17:31:17] INFO: User 'Bob' connected from ('127.0.0.1', 56924)
+[2026-05-06 17:31:17] INFO: Active threads: 3
+[2026-05-06 17:31:17] INFO: Incoming connection from ('127.0.0.1', 56925)
+[2026-05-06 17:31:17] WARNING: Rejected duplicate username 'Alice' from ('127.0.0.1', 56925)
+[2026-05-06 17:31:17] INFO: Active threads: 4
+[2026-05-06 17:31:18] INFO: [CHAT] Alice: Hello everyone
+[2026-05-06 17:31:18] INFO: User 'Bob' quit gracefully
+[2026-05-06 17:31:18] INFO: Removed client 'Bob'
+[2026-05-06 17:31:18] INFO: Active threads: 3
+[2026-05-06 17:31:18] INFO: User 'Alice' quit gracefully
+[2026-05-06 17:31:18] INFO: Removed client 'Alice'
+[2026-05-06 17:31:18] INFO: Active threads: 2
+[2026-05-06 17:32:13] INFO: Incoming connection from ('127.0.0.1', 60520)
+[2026-05-06 17:32:13] INFO: User 'Alice' connected from ('127.0.0.1', 60520)
+[2026-05-06 17:32:13] INFO: Active threads: 2
+[2026-05-06 17:32:13] INFO: Incoming connection from ('127.0.0.1', 60521)
+[2026-05-06 17:32:13] INFO: User 'Bob' connected from ('127.0.0.1', 60521)
+[2026-05-06 17:32:13] INFO: Active threads: 3
+[2026-05-06 17:32:13] INFO: Incoming connection from ('127.0.0.1', 60522)
+[2026-05-06 17:32:13] WARNING: Rejected duplicate username 'Alice' from ('127.0.0.1', 60522)
+[2026-05-06 17:32:13] INFO: Active threads: 4
+[2026-05-06 17:32:14] INFO: [CHAT] Alice: Hello everyone
+[2026-05-06 17:32:14] INFO: User 'Bob' quit gracefully
+[2026-05-06 17:32:14] INFO: Removed client 'Bob'
+[2026-05-06 17:32:14] INFO: Active threads: 3
+[2026-05-06 17:32:14] INFO: User 'Alice' quit gracefully
+[2026-05-06 17:32:14] INFO: Removed client 'Alice'
+[2026-05-06 17:32:14] INFO: Active threads: 2
+[2026-05-06 17:56:03] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-06 17:56:04] INFO: Incoming connection from ('127.0.0.1', 64614)
+[2026-05-06 17:56:04] INFO: User 'Alice' connected from ('127.0.0.1', 64614)
+[2026-05-06 17:56:04] INFO: Incoming connection from ('127.0.0.1', 64615)
+[2026-05-06 17:56:04] INFO: User 'Bob' connected from ('127.0.0.1', 64615)
+[2026-05-06 17:56:04] INFO: Incoming connection from ('127.0.0.1', 64616)
+[2026-05-06 17:56:04] WARNING: Rejected duplicate username 'Alice' from ('127.0.0.1', 64616)
+[2026-05-06 17:56:05] INFO: [CHAT] Alice: Hello everyone
+[2026-05-06 17:56:05] INFO: User 'Bob' disconnected
+[2026-05-06 17:56:05] INFO: User 'Alice' disconnected
+[2026-05-06 18:12:06] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-06 18:13:20] INFO: Incoming connection from ('127.0.0.1', 53836)
+[2026-05-06 18:13:52] INFO: Incoming connection from ('127.0.0.1', 53849)
+[2026-05-06 18:13:56] INFO: Incoming connection from ('127.0.0.1', 53850)
+[2026-05-06 18:14:03] INFO: User 'A1' connected from ('127.0.0.1', 53836)
+[2026-05-06 18:14:09] INFO: User 'A2' connected from ('127.0.0.1', 53850)
+[2026-05-06 18:14:12] INFO: User 'A3' connected from ('127.0.0.1', 53849)
+[2026-05-06 18:15:49] INFO: [CHAT] A1: Hello everyone!
+[2026-05-06 18:15:59] INFO: [CHAT] A3: Hi
+[2026-05-06 18:17:14] INFO: Incoming connection from ('127.0.0.1', 58105)
+[2026-05-06 18:17:17] WARNING: Rejected duplicate username 'A1' from ('127.0.0.1', 58105)
+[2026-05-06 18:18:11] INFO: File transfer requested: A1 -> A3 (test_file.txt)
+[2026-05-06 18:18:31] INFO: [CHAT] A3: ls
+[2026-05-06 18:23:00] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-06 18:23:45] INFO: Incoming connection from ('127.0.0.1', 57754)
+[2026-05-06 18:23:48] INFO: User 'A' connected from ('127.0.0.1', 57754)
+[2026-05-06 18:24:41] INFO: Incoming connection from ('127.0.0.1', 60480)
+[2026-05-06 18:24:44] INFO: User 'B' connected from ('127.0.0.1', 60480)
+[2026-05-06 18:25:24] INFO: File transfer requested: A -> B (test_file.txt)
+[2026-05-06 18:33:06] INFO: [CHAT] B: hi
+[2026-05-06 18:33:12] INFO: File transfer requested: A -> B (test_file.txt)
+[2026-05-06 18:34:18] INFO: Incoming connection from ('127.0.0.1', 50197)
+[2026-05-06 18:34:21] INFO: User 'C' connected from ('127.0.0.1', 50197)
+[2026-05-07 01:16:50] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 01:21:42] INFO: Incoming connection from ('127.0.0.1', 53336)
+[2026-05-07 01:21:42] INFO: User 'Ahmed_Hassan_2021001' connected from ('127.0.0.1', 53336)
+[2026-05-07 01:23:14] INFO: User 'Ahmed_Hassan_2021001' disconnected
+[2026-05-07 01:31:40] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 01:33:41] INFO: Incoming connection from ('127.0.0.1', 51247)
+[2026-05-07 01:33:41] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 51247)
+[2026-05-07 01:35:25] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 01:37:08] INFO: Incoming connection from ('127.0.0.1', 50577)
+[2026-05-07 01:37:08] INFO: User 'Laila_Mostafa_2021004' connected from ('127.0.0.1', 50577)
+[2026-05-07 01:37:34] INFO: Incoming connection from ('127.0.0.1', 60272)
+[2026-05-07 01:37:34] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 60272)
+[2026-05-07 01:37:59] INFO: File transfer requested: Hamza_Shukri_20231457 -> Laila_Mostafa_2021004 (pdf.txt)
+[2026-05-07 01:38:22] INFO: [CHAT] Laila_Mostafa_2021004: Hi Hamza
+[2026-05-07 01:42:34] INFO: User 'Laila_Mostafa_2021004' disconnected
+[2026-05-07 01:42:39] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 01:54:26] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 01:55:05] INFO: Incoming connection from ('127.0.0.1', 54056)
+[2026-05-07 01:55:05] INFO: User 'Laila_Mostafa_2021004' connected from ('127.0.0.1', 54056)
+[2026-05-07 01:55:30] INFO: Incoming connection from ('127.0.0.1', 54057)
+[2026-05-07 01:55:30] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 54057)
+[2026-05-07 01:55:48] INFO: [CHAT] Hamza_Shukri_20231457: Hi Zffft
+[2026-05-07 01:55:56] INFO: [CHAT] Laila_Mostafa_2021004: Hi
+[2026-05-07 01:56:09] INFO: File transfer requested: Laila_Mostafa_2021004 -> Hamza_Shukri_20231457 (pdf.txt)
+[2026-05-07 01:56:43] INFO: File transfer requested: Hamza_Shukri_20231457 -> Laila_Mostafa_2021004 (ChatNet_Report.docx)
+[2026-05-07 01:57:29] INFO: File transfer requested: Laila_Mostafa_2021004 -> Hamza_Shukri_20231457 (pdf.txt)
+[2026-05-07 01:57:39] INFO: User 'Laila_Mostafa_2021004' disconnected
+[2026-05-07 01:57:50] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 02:00:03] INFO: Incoming connection from ('127.0.0.1', 49851)
+[2026-05-07 02:00:03] INFO: User 'Laila_Mostafa_2021004' connected from ('127.0.0.1', 49851)
+[2026-05-07 02:00:20] INFO: Incoming connection from ('127.0.0.1', 49852)
+[2026-05-07 02:00:20] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 49852)
+[2026-05-07 02:00:38] INFO: [CHAT] Hamza_Shukri_20231457: hi leila
+[2026-05-07 02:09:59] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 02:10:16] INFO: User 'Laila_Mostafa_2021004' disconnected
+[2026-05-07 02:10:19] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 02:15:45] INFO: Incoming connection from ('127.0.0.1', 51107)
+[2026-05-07 02:15:45] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 51107)
+[2026-05-07 02:16:33] INFO: Incoming connection from ('127.0.0.1', 64520)
+[2026-05-07 02:16:33] INFO: User 'Laila_Mostafa_2021004' connected from ('127.0.0.1', 64520)
+[2026-05-07 02:19:11] INFO: Incoming connection from ('127.0.0.1', 61118)
+[2026-05-07 02:19:11] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 61118)
+[2026-05-07 02:19:24] INFO: [CHAT] Hamza_Shukri_20231457: Hi Laila
+[2026-05-07 02:19:33] INFO: File transfer requested: Hamza_Shukri_20231457 -> Laila_Mostafa_2021004 (pdf.txt)
+[2026-05-07 02:25:02] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 02:25:07] INFO: User 'Laila_Mostafa_2021004' disconnected
+[2026-05-07 02:30:47] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 02:31:59] INFO: Incoming connection from ('127.0.0.1', 50356)
+[2026-05-07 02:31:59] INFO: User 'DEPI_5555555' connected from ('127.0.0.1', 50356)
+[2026-05-07 02:32:27] INFO: Incoming connection from ('127.0.0.1', 58731)
+[2026-05-07 02:32:27] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 58731)
+[2026-05-07 02:32:44] INFO: File transfer requested: Hamza_Shukri_20231457 -> DEPI_5555555 (Test.txt)
+[2026-05-07 02:34:27] INFO: [CHAT] Hamza_Shukri_20231457: Hi DEPI
+[2026-05-07 02:34:43] INFO: User 'DEPI_5555555' disconnected
+[2026-05-07 02:34:44] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 14:27:24] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 14:31:10] INFO: Incoming connection from ('127.0.0.1', 59860)
+[2026-05-07 14:31:10] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 59860)
+[2026-05-07 14:33:08] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-07 17:47:12] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-07 17:48:46] INFO: Incoming connection from ('127.0.0.1', 60741)
+[2026-05-07 17:48:46] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 60741)
+[2026-05-07 17:49:35] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-08 19:46:34] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-08 19:48:11] INFO: Incoming connection from ('127.0.0.1', 63889)
+[2026-05-08 19:48:12] INFO: User 'DEPI_5555555' connected from ('127.0.0.1', 63889)
+[2026-05-08 19:48:28] INFO: [CHAT] DEPI_5555555: Hi
+[2026-05-08 19:51:09] INFO: User 'DEPI_5555555' disconnected
+[2026-05-08 22:42:58] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-08 22:44:59] INFO: Incoming connection from ('127.0.0.1', 50712)
+[2026-05-08 22:44:59] INFO: User 'DEPI_5555555' connected from ('127.0.0.1', 50712)
+[2026-05-08 22:45:31] INFO: Incoming connection from ('127.0.0.1', 50729)
+[2026-05-08 22:45:31] INFO: User 'Hamza_Shukri_20231457' connected from ('127.0.0.1', 50729)
+[2026-05-08 22:45:57] INFO: File transfer requested: DEPI_5555555 -> Hamza_Shukri_20231457 (Test.txt)
+[2026-05-08 22:47:04] INFO: [CHAT] DEPI_5555555: hi
+[2026-05-08 22:47:13] INFO: User 'Hamza_Shukri_20231457' disconnected
+[2026-05-08 22:47:20] INFO: User 'DEPI_5555555' disconnected
+[2026-05-08 22:49:19] INFO: Incoming connection from ('127.0.0.1', 51854)
+[2026-05-08 22:49:35] INFO: User 'AAA' connected from ('127.0.0.1', 51854)
+[2026-05-08 22:50:03] INFO: Incoming connection from ('127.0.0.1', 50843)
+[2026-05-08 22:50:07] INFO: User 'ACC' connected from ('127.0.0.1', 50843)
+[2026-05-08 22:50:45] INFO: [CHAT] AAA: Hi
+[2026-05-09 20:09:35] INFO: ChatNet threaded server started on 0.0.0.0:12000
+[2026-05-09 20:10:46] INFO: Incoming connection from ('127.0.0.1', 54721)
+[2026-05-09 20:10:46] INFO: User 'DEPI_5555555' connected from ('127.0.0.1', 54721)
+[2026-05-10 10:56:50] INFO: User 'DEPI_5555555' disconnected
